@@ -11,12 +11,19 @@ root.minsize(1000, 420)
 root.maxsize(1000, 420)
 
 filter_frame = ttk.LabelFrame(root, text="Filters")
-filter_frame.place(x=10, y=50, width=370, height=210)
+filter_frame.place(x=10, y=45, width=370, height=210)
 
 tool_frame = ttk.LabelFrame(root, text="Tools")
-tool_frame.place(x=10, y=265, width=370, height=145)
+tool_frame.place(x=10, y=260, width=370, height=150)
 
 loaded_image = None
+
+mode = "Default"
+
+rect = None
+start_x, start_y = 0, 0
+end_x, end_y = 0, 0
+x_offset, y_offset = 0, 0
 
 ''' MODEL - Functions and Data'''
 # Load the image
@@ -35,7 +42,7 @@ def load_image():
             loaded_image = img.resize((int(width * multiplier), 400), Image.LANCZOS)
         display_image(loaded_image)
     except:
-        pass
+        messagebox.showerror("Error", "File not found!")
 
 # Display the image
 def display_image(image):
@@ -131,6 +138,118 @@ def apply_point():
         loaded_image = canvas
         display_image(loaded_image)
 
+def on_click(event):
+    global start_x, start_y
+    start_x, start_y = event.x, event.y
+
+def on_drag(event):
+    global start_x, start_y, end_x, end_y, x_offset, y_offset, rect
+    end_x, end_y = event.x, event.y
+
+    try:
+        x_offset = round((600-loaded_image.width)/2)
+    except:
+        x_offset = 0
+    try:
+        y_offset = round((400-loaded_image.height)/2)
+    except:
+        y_offset = 0
+
+    if start_x < x_offset:
+        start_x = 0
+    elif start_x > loaded_image.width+x_offset:
+        start_x = loaded_image.width+x_offset-1
+    
+    if end_x < x_offset:
+        end_x = 0
+    elif end_x > loaded_image.width+x_offset:
+        end_x = loaded_image.width+x_offset-1
+
+    if start_y < y_offset:
+        start_y = 0
+    elif start_y > loaded_image.height+y_offset:
+        start_y = loaded_image.height+y_offset-1
+
+    if end_y < y_offset:
+        end_y = 0
+    elif end_y > loaded_image.height+y_offset:
+        end_y = loaded_image.height+y_offset-1
+
+    print(f"{start_x} {start_y} to {end_x} {end_y}")
+
+    canvas.delete(rect)
+    rect = canvas.create_rectangle(start_x, start_y, event.x, event.y, outline = "white", dash = (5,5))
+
+def toggle_crop():
+    global mode
+    if mode == "Default":
+        mode = "Crop"
+        crop_button.config(text="Crop - Active")
+        canvas.bind("<Button-1>", on_click)
+        canvas.bind("<B1-Motion>", on_drag)
+    elif mode == "Blur":
+        mode = "Crop"
+        crop_button.config(text="Crop - Active")
+        blur_button.config(text="Blur")
+    else:
+        mode = "Default"
+        crop_button.config(text="Crop")
+        canvas.unbind("<Button-1>")
+        canvas.unbind("<B1-Motion>")
+
+    canvas.delete(rect)
+
+def toggle_blur():
+    global mode
+    if mode == "Default":
+        mode = "Blur"
+        blur_button.config(text="Blur - Active")
+        canvas.bind("<Button-1>", on_click)
+        canvas.bind("<B1-Motion>", on_drag)
+    elif mode == "Crop":
+        mode = "Blur"
+        blur_button.config(text="Blur - Active")
+        crop_button.config(text="Crop")
+    else:
+        mode = "Default"
+        blur_button.config(text="Blur")
+        canvas.unbind("<Button-1>")
+        canvas.unbind("<B1-Motion>")
+
+    canvas.delete(rect)
+
+def apply_tool():
+    global start_x, start_y, end_x, end_y, mode, loaded_image
+    if start_x > end_x:
+        temp = start_x
+        start_x = end_x
+        end_x = temp
+    if start_y > end_y:
+        temp = start_y
+        start_y = end_y
+        end_y = temp
+
+    crop_button.config(text="Crop")
+    blur_button.config(text="Blur")
+    canvas.unbind("<Button-1>")
+    canvas.unbind("<B1-Motion>")
+
+    if mode == "Crop":
+        loaded_image = loaded_image.crop([start_x-x_offset, start_y-y_offset, end_x-x_offset, end_y-y_offset])
+    elif mode == "Blur":
+        pixels = loaded_image.load()
+
+        for y in range(start_y-y_offset, end_y-y_offset, 10):
+            for x in range(start_x-x_offset, end_x-x_offset, 10):
+                r, g, b = pixels[x, y]
+
+                for yy in range(y, y + 10):
+                    for xx in range(x, x + 10):
+                        pixels[xx, yy] = (r, g, b)
+
+    display_image(loaded_image)
+    mode = "Default"
+    
 
 
 ''' CONTROLLERS - Widgets That Users Interact With'''
@@ -162,13 +281,23 @@ contrast_button.place(x=10, y=130, width=167, height=50)
 point_button = Button(filter_frame, text="Pointillism", command=apply_point)
 point_button.place(x=187, y=130, width=168, height=50)
 
+# Tools
+crop_button = Button(tool_frame, text="Crop", command=toggle_crop)
+crop_button.place(x=10, y=10, width=255, height=50)
+
+blur_button = Button(tool_frame, text="Blur", command=toggle_blur)
+blur_button.place(x=10, y=70, width=255, height=50)
+
+apply_tool_button = Button(tool_frame, text="Apply", command=apply_tool)
+apply_tool_button.place(x=275, y=10, width=80, height=110)
+
 
 
 ''' VIEW - Widgets That Display Visuals'''
 title_label = Label(text="Photoshoppe", font=("Arial", 24))
 title_label.place(x=10, y=10, width=180, height=30)
 
-canvas = Canvas(root)
+canvas = Canvas(root, bg="white")
 canvas.place(x=390, y=10, width=600, height=400)
 
 root.mainloop()
