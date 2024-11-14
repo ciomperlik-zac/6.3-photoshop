@@ -138,6 +138,7 @@ def apply_point():
         loaded_image = canvas
         display_image(loaded_image)
 
+# Select Box Handling
 def on_click(event):
     global start_x, start_y
     start_x, start_y = event.x, event.y
@@ -158,6 +159,7 @@ def on_drag(event):
     canvas.delete(rect)
     rect = canvas.create_rectangle(start_x, start_y, event.x, event.y, outline = "white", dash = (5,5))
 
+# Tools
 def toggle_crop():
     global mode
     if loaded_image:
@@ -262,6 +264,7 @@ def apply_tool():
 
 
 ''' CONTROLLERS - Widgets That Users Interact With'''
+# Open/Save Dropdown
 menu_bar = Menu(root)
 root.config(menu=menu_bar)
 
@@ -303,9 +306,11 @@ apply_tool_button.place(x=275, y=10, width=80, height=110)
 
 
 ''' VIEW - Widgets That Display Visuals'''
+# Title
 title_label = Label(text="Photoshoppe", font=("Arial", 24))
 title_label.place(x=10, y=10, width=180, height=30)
 
+# Canvas
 canvas = Canvas(root, bg="white")
 canvas.place(x=390, y=10, width=600, height=400)
 
