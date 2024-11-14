@@ -4,6 +4,7 @@ from PIL import Image, ImageTk, ImageEnhance, ImageOps, ImageDraw, ImageFilter
 import random
 import os
 
+# Initialize Root/Variables
 root = Tk()
 root.title("Photoshoppe")
 root.geometry("1000x420")
@@ -24,6 +25,8 @@ rect = None
 start_x, start_y = 0, 0
 end_x, end_y = 0, 0
 x_offset, y_offset = 0, 0
+
+
 
 ''' MODEL - Functions and Data'''
 # Load the image
