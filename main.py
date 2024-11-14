@@ -155,28 +155,6 @@ def on_drag(event):
     except:
         y_offset = 0
 
-    if start_x < x_offset:
-        start_x = 0
-    elif start_x > loaded_image.width+x_offset:
-        start_x = loaded_image.width+x_offset-1
-    
-    if end_x < x_offset:
-        end_x = 0
-    elif end_x > loaded_image.width+x_offset:
-        end_x = loaded_image.width+x_offset-1
-
-    if start_y < y_offset:
-        start_y = 0
-    elif start_y > loaded_image.height+y_offset:
-        start_y = loaded_image.height+y_offset-1
-
-    if end_y < y_offset:
-        end_y = 0
-    elif end_y > loaded_image.height+y_offset:
-        end_y = loaded_image.height+y_offset-1
-
-    print(f"{start_x} {start_y} to {end_x} {end_y}")
-
     canvas.delete(rect)
     rect = canvas.create_rectangle(start_x, start_y, event.x, event.y, outline = "white", dash = (5,5))
 
@@ -220,6 +198,34 @@ def toggle_blur():
 
 def apply_tool():
     global start_x, start_y, end_x, end_y, mode, loaded_image
+    if start_x < x_offset:
+        start_x = 0
+    elif start_x > loaded_image.width+x_offset:
+        start_x = loaded_image.width
+    else:
+        start_x = start_x-x_offset
+    
+    if end_x < x_offset:
+        end_x = 0
+    elif end_x > loaded_image.width+x_offset:
+        end_x = loaded_image.width
+    else:
+        end_x = end_x-x_offset
+
+    if start_y < y_offset:
+        start_y = 0
+    elif start_y > loaded_image.height+y_offset:
+        start_y = loaded_image.height
+    else:
+        start_y = start_y-y_offset
+
+    if end_y < y_offset:
+        end_y = 0
+    elif end_y > loaded_image.height+y_offset:
+        end_y = loaded_image.height
+    else:
+        end_y = end_y-y_offset
+
     if start_x > end_x:
         temp = start_x
         start_x = end_x
@@ -235,16 +241,16 @@ def apply_tool():
     canvas.unbind("<B1-Motion>")
 
     if mode == "Crop":
-        loaded_image = loaded_image.crop([start_x-x_offset, start_y-y_offset, end_x-x_offset, end_y-y_offset])
+        loaded_image = loaded_image.crop([start_x, start_y, end_x, end_y])
     elif mode == "Blur":
         pixels = loaded_image.load()
 
-        for y in range(start_y-y_offset, end_y-y_offset, 10):
-            for x in range(start_x-x_offset, end_x-x_offset, 10):
+        for y in range(start_y, end_y, 10):
+            for x in range(start_x, end_x, 10):
                 r, g, b = pixels[x, y]
 
-                for yy in range(y, y + 10):
-                    for xx in range(x, x + 10):
+                for yy in range(y, y + min(loaded_image.height-y, 10)):
+                    for xx in range(x, x + min(loaded_image.width-x, 10)):
                         pixels[xx, yy] = (r, g, b)
 
     display_image(loaded_image)
