@@ -160,101 +160,104 @@ def on_drag(event):
 
 def toggle_crop():
     global mode
-    if mode == "Default":
-        mode = "Crop"
-        crop_button.config(text="Crop - Active")
-        canvas.bind("<Button-1>", on_click)
-        canvas.bind("<B1-Motion>", on_drag)
-    elif mode == "Blur":
-        mode = "Crop"
-        crop_button.config(text="Crop - Active")
-        blur_button.config(text="Blur")
-    else:
-        mode = "Default"
-        crop_button.config(text="Crop")
-        canvas.unbind("<Button-1>")
-        canvas.unbind("<B1-Motion>")
+    if loaded_image:
+        if mode == "Default":
+            mode = "Crop"
+            crop_button.config(text="Crop - Active")
+            canvas.bind("<Button-1>", on_click)
+            canvas.bind("<B1-Motion>", on_drag)
+        elif mode == "Blur":
+            mode = "Crop"
+            crop_button.config(text="Crop - Active")
+            blur_button.config(text="Blur")
+        else:
+            mode = "Default"
+            crop_button.config(text="Crop")
+            canvas.unbind("<Button-1>")
+            canvas.unbind("<B1-Motion>")
 
-    canvas.delete(rect)
+        canvas.delete(rect)
 
 def toggle_blur():
     global mode
-    if mode == "Default":
-        mode = "Blur"
-        blur_button.config(text="Blur - Active")
-        canvas.bind("<Button-1>", on_click)
-        canvas.bind("<B1-Motion>", on_drag)
-    elif mode == "Crop":
-        mode = "Blur"
-        blur_button.config(text="Blur - Active")
+    if loaded_image:
+        if mode == "Default":
+            mode = "Blur"
+            blur_button.config(text="Blur - Active")
+            canvas.bind("<Button-1>", on_click)
+            canvas.bind("<B1-Motion>", on_drag)
+        elif mode == "Crop":
+            mode = "Blur"
+            blur_button.config(text="Blur - Active")
+            crop_button.config(text="Crop")
+        else:
+            mode = "Default"
+            blur_button.config(text="Blur")
+            canvas.unbind("<Button-1>")
+            canvas.unbind("<B1-Motion>")
+
+        canvas.delete(rect)
+
+def apply_tool():
+    global start_x, start_y, end_x, end_y, mode, loaded_image
+    if mode != "Default":
+        if start_x < x_offset:
+            start_x = 0
+        elif start_x > loaded_image.width+x_offset:
+            start_x = loaded_image.width
+        else:
+            start_x = start_x-x_offset
+        
+        if end_x < x_offset:
+            end_x = 0
+        elif end_x > loaded_image.width+x_offset:
+            end_x = loaded_image.width
+        else:
+            end_x = end_x-x_offset
+
+        if start_y < y_offset:
+            start_y = 0
+        elif start_y > loaded_image.height+y_offset:
+            start_y = loaded_image.height
+        else:
+            start_y = start_y-y_offset
+
+        if end_y < y_offset:
+            end_y = 0
+        elif end_y > loaded_image.height+y_offset:
+            end_y = loaded_image.height
+        else:
+            end_y = end_y-y_offset
+
+        if start_x > end_x:
+            temp = start_x
+            start_x = end_x
+            end_x = temp
+        if start_y > end_y:
+            temp = start_y
+            start_y = end_y
+            end_y = temp
+
         crop_button.config(text="Crop")
-    else:
-        mode = "Default"
         blur_button.config(text="Blur")
         canvas.unbind("<Button-1>")
         canvas.unbind("<B1-Motion>")
 
-    canvas.delete(rect)
+        if mode == "Crop":
+            loaded_image = loaded_image.crop([start_x, start_y, end_x, end_y])
+        elif mode == "Blur":
+            pixels = loaded_image.load()
 
-def apply_tool():
-    global start_x, start_y, end_x, end_y, mode, loaded_image
-    if start_x < x_offset:
-        start_x = 0
-    elif start_x > loaded_image.width+x_offset:
-        start_x = loaded_image.width
-    else:
-        start_x = start_x-x_offset
-    
-    if end_x < x_offset:
-        end_x = 0
-    elif end_x > loaded_image.width+x_offset:
-        end_x = loaded_image.width
-    else:
-        end_x = end_x-x_offset
+            for y in range(start_y, end_y, 10):
+                for x in range(start_x, end_x, 10):
+                    r, g, b = pixels[x, y]
 
-    if start_y < y_offset:
-        start_y = 0
-    elif start_y > loaded_image.height+y_offset:
-        start_y = loaded_image.height
-    else:
-        start_y = start_y-y_offset
+                    for yy in range(y, y + min(loaded_image.height-y, 10)):
+                        for xx in range(x, x + min(loaded_image.width-x, 10)):
+                            pixels[xx, yy] = (r, g, b)
 
-    if end_y < y_offset:
-        end_y = 0
-    elif end_y > loaded_image.height+y_offset:
-        end_y = loaded_image.height
-    else:
-        end_y = end_y-y_offset
-
-    if start_x > end_x:
-        temp = start_x
-        start_x = end_x
-        end_x = temp
-    if start_y > end_y:
-        temp = start_y
-        start_y = end_y
-        end_y = temp
-
-    crop_button.config(text="Crop")
-    blur_button.config(text="Blur")
-    canvas.unbind("<Button-1>")
-    canvas.unbind("<B1-Motion>")
-
-    if mode == "Crop":
-        loaded_image = loaded_image.crop([start_x, start_y, end_x, end_y])
-    elif mode == "Blur":
-        pixels = loaded_image.load()
-
-        for y in range(start_y, end_y, 10):
-            for x in range(start_x, end_x, 10):
-                r, g, b = pixels[x, y]
-
-                for yy in range(y, y + min(loaded_image.height-y, 10)):
-                    for xx in range(x, x + min(loaded_image.width-x, 10)):
-                        pixels[xx, yy] = (r, g, b)
-
-    display_image(loaded_image)
-    mode = "Default"
+        display_image(loaded_image)
+        mode = "Default"
     
 
 
